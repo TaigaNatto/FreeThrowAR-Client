@@ -15,6 +15,7 @@ ExportedObj/
 *.userprefs
 *.csproj
 *.pidb
+*.log
 *.suo
 *.sln
 *.user
