@@ -27,6 +27,20 @@ public class ClientNetwork : MonoBehaviour
             var stream = connection.GetStream();
             var reader = new StreamReader(stream, Encoding.UTF8);
 
+            while (connection.Connected)
+            {
+                while (!reader.EndOfStream)
+                {
+                    string str = reader.ReadLine();
+                    OnMessage(str);
+                }
+            }
+
+            if(connection.Client.Poll(1000, SelectMode.SelectRead) && (connection.Client.Available == 0))
+            {
+                Debug.Log("Disconnect: " + connection.Client.RemoteEndPoint);
+            }
+
         });
 
         
