@@ -57,11 +57,13 @@ public class ClientNetwork : MonoBehaviour
     {
         Task.Run(() =>
         {
+            // サーバーに接続
             connection = new TcpClient(address, port);
             var stream = connection.GetStream();
             var reader = new StreamReader(stream, Encoding.UTF8);
             Debug.Log("Connect:" + connection.Client.RemoteEndPoint);
 
+            // 接続が切れるまで読み込み
             while (true)
             {   
                 while (!reader.EndOfStream)
@@ -87,7 +89,7 @@ public class ClientNetwork : MonoBehaviour
     }
 
 
-    // パケットを受け取った時
+    // パケットを受け取ったら実行
     private void OnMessage(string str)
     {
         IDictionary msgJson = null;
@@ -95,20 +97,23 @@ public class ClientNetwork : MonoBehaviour
 
         msgJson = (IDictionary)Json.Deserialize(str);
         msgName = (string)msgJson["name"];
-
+        
         if (msgName == "joined")
         {
+            // サーバーに誰かが接続した時
             var msgValue = (int)msgJson["value"];
             Debug.Log("Joined" + msgValue);
             OnPlayerJoined(msgValue);
         }
         else if (msgName == "start" && currentState == GameState.Matching)
         {
+            // ゲームスタートが通知された時
             GameStart();
             OnGameStart();
         }
         else if(msgName == "ball" && currentState == GameState.Playing)
         {
+            // 他クライアントでボールが投げられた時
             float posx = (float)msgJson["posx"];
             float posy = (float)msgJson["posy"];
             float posz = (float)msgJson["posz"];
@@ -120,15 +125,22 @@ public class ClientNetwork : MonoBehaviour
             Vector3 way = new Vector3(wayx, wayy, wayz);
 
             OnReceiveBallData(pos, way);
+        }else if (msgName == "ranking" && currentState == GameState.Finish)
+        {
+            var points = (IList)msgJson["value"];
+            OnReceiveRankingData(points);
         }
 
     }
 
     protected void SendMessageToServer(string msg)
     {
-        msg += "\n";
+        msg += "\n"; //改行を追加
         var body = Encoding.UTF8.GetBytes(msg);
-        connection.GetStream().Write(body, 0, body.Length);
+        if (connection.Available > 0)
+        {
+            connection.GetStream().Write(body, 0, body.Length);
+        }
 
     }
     
@@ -175,6 +187,7 @@ public class ClientNetwork : MonoBehaviour
         Connect(serverIP, port);
     }
 
+    // ゲーム開始準備完了
     public void GameStartReady()
     {
         SendMessageToServer("{\"name\":\"start\"}");
@@ -211,6 +224,7 @@ public class ClientNetwork : MonoBehaviour
 
     }
 
+    // ゲーム終了時に得点を送信
     public void sendPointData(int point)
     {
         point = 10;
@@ -218,7 +232,7 @@ public class ClientNetwork : MonoBehaviour
         SendMessageToServer("{\"name\":\"finish\",\"value\":" + point + "}");
     }
 
-    protected virtual void OnReceiveRankingData()
+    protected virtual void OnReceiveRankingData(IList pointList)
     {
 
     }
