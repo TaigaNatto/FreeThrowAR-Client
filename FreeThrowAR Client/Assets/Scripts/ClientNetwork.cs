@@ -45,7 +45,7 @@ public class ClientNetwork : MonoBehaviour
 
     }
 
-    protected void OnApplicationQuit()
+    void Quit()
     {
         connection.Close();
     }
@@ -64,15 +64,14 @@ public class ClientNetwork : MonoBehaviour
             Debug.Log("Connect:" + connection.Client.RemoteEndPoint);
 
             // 接続が切れるまで読み込み
-            while (true)
-            {   
+            while (connection.Connected)
+            { 
                 while (!reader.EndOfStream)
                 {
                     string str = reader.ReadLine();
                     Debug.Log("MessageReceived: " + str);
                     OnMessage(str);
                 }
-
 
                 if (connection.Client.Poll(1000, SelectMode.SelectRead) && (connection.Client.Available == 0))
                 {
@@ -81,6 +80,7 @@ public class ClientNetwork : MonoBehaviour
                     GameReset();
                     break;
                 }
+                
             }
 
         });
@@ -101,8 +101,8 @@ public class ClientNetwork : MonoBehaviour
         if (msgName == "joined")
         {
             // サーバーに誰かが接続した時
-            var msgValue = (int)msgJson["value"];
-            Debug.Log("Joined" + msgValue);
+            int msgValue = int.Parse(msgJson["value"].ToString());
+            Debug.Log("Joined: " + msgValue);
             OnPlayerJoined(msgValue);
         }
         else if (msgName == "start" && currentState == GameState.Matching)
@@ -114,12 +114,12 @@ public class ClientNetwork : MonoBehaviour
         else if(msgName == "ball" && currentState == GameState.Playing)
         {
             // 他クライアントでボールが投げられた時
-            float posx = (float)msgJson["posx"];
-            float posy = (float)msgJson["posy"];
-            float posz = (float)msgJson["posz"];
-            float wayx = (float)msgJson["wayx"];
-            float wayy = (float)msgJson["wayy"];
-            float wayz = (float)msgJson["wayz"];
+            float posx = float.Parse(msgJson["posx"].ToString());
+            float posy = float.Parse(msgJson["posy"].ToString());
+            float posz = float.Parse(msgJson["posz"].ToString());
+            float wayx = float.Parse(msgJson["wayx"].ToString());
+            float wayy = float.Parse(msgJson["wayy"].ToString());
+            float wayz = float.Parse(msgJson["wayz"].ToString());
 
             Vector3 pos = new Vector3(posx, posy, posz);
             Vector3 way = new Vector3(wayx, wayy, wayz);
@@ -137,9 +137,10 @@ public class ClientNetwork : MonoBehaviour
     {
         msg += "\n"; //改行を追加
         var body = Encoding.UTF8.GetBytes(msg);
-        if (connection.Available > 0)
+        if (connection.Connected)
         {
             connection.GetStream().Write(body, 0, body.Length);
+            Debug.Log("MessageSend: " + msg);
         }
 
     }
@@ -183,7 +184,7 @@ public class ClientNetwork : MonoBehaviour
  // パブリックメソッドとコールバック
     public void ConnectToSerer()
     {
-        currentState = GameState.Matching;
+        GameMatching();
         Connect(serverIP, port);
     }
 
@@ -227,7 +228,6 @@ public class ClientNetwork : MonoBehaviour
     // ゲーム終了時に得点を送信
     public void sendPointData(int point)
     {
-        point = 10;
         GameFinish();
         SendMessageToServer("{\"name\":\"finish\",\"value\":" + point + "}");
     }

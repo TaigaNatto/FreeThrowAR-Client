@@ -694,7 +694,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   port: 30000
-  serverIP: 192.168.2.133
+  serverIP: 192.168.43.234
 --- !u!4 &987801174
 Transform:
   m_ObjectHideFlags: 0
@@ -1018,7 +1018,7 @@ MonoBehaviour:
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 5
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
